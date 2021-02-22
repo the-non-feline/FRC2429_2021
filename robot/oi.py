@@ -17,6 +17,7 @@ from commands.autonomous_drive_pid import AutonomousDrivePID
 from commands.autonomous_velocity_pid import AutonomousVelocityPID
 from commands.frc_characterication import FRCCharacterization
 from commands.shooter_toggle_flywheel import ShooterToggleFlywheel
+from commands.autonomous_angle_pid import AutonomousAnglePID
 
 import subsystems.drive_constants as drive_constants
 
@@ -48,7 +49,7 @@ class OI(object):
         #self.buttonA.whenPressed(FRCCharacterization(self.robot, timeout=60, button=self.buttonA))
         self.buttonB.whenPressed( AutonomousRotate(self.robot, setpoint=60, timeout=4, source='dashboard') )
         self.buttonX.whenPressed( AutonomousRotate(self.robot, setpoint=-60, timeout=4, source='dashboard', absolute=True) )
-        self.buttonY.whenPressed( AutonomousDrivePID(self.robot, setpoint=2, timeout=4, source='dashboard') )
+        self.buttonY.whenPressed( AutonomousAnglePID(self.robot, source='dashboard') ) 
 
         # g h j k on the keyboard
         self.buttonLB.whenPressed( AutonomousSlalom(self.robot)  )
@@ -96,6 +97,12 @@ class OI(object):
 
         SmartDashboard.putNumber('z_distance', 2.0)
         SmartDashboard.putNumber('z_angle', 60)
+        SmartDashboard.putNumber('hood_angle', 0) 
+        SmartDashboard.putNumber('hood_current_angle', 0) 
+        SmartDashboard.putNumber('hood_error', 0) 
+        SmartDashboard.putNumber('hood_I', 0) 
+        SmartDashboard.putNumber('hood_D', 0) 
+        SmartDashboard.putNumber('hood_power', 0) 
 
         self.drive_fwd_command =  AutonomousDriveTimed(self.robot, timeout=1)
         self.rotate_command = AutonomousRotate(self.robot, setpoint=45, timeout=3, source='dashboard')

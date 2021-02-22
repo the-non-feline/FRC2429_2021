@@ -16,7 +16,7 @@ class AutonomousAnglePID(Command):
         self.source = source  # sent directly to command or via dashboard
 
         if timeout is None:
-            self.timeout = 5
+            self.timeout = 20   
         else:
             self.timeout = timeout
         
@@ -40,20 +40,22 @@ class AutonomousAnglePID(Command):
 
         self.start_time = round(Timer.getFPGATimestamp() - self.robot.enabled_time, 1) # time at which robot starts
 
-        print("\n" + f"** Started {self.getName()} with setpoint {self.setpoint} at {self.start_time} s **")
-        SmartDashboard.putString("alert", f"** Started {self.getName()} with setpoint {self.setpoint} at {self.start_time} s **") # logging
-
         if self.source == 'dashboard':
             self.setpoint = SmartDashboard.getNumber('hood_angle', 1) # pulls this number from dashboard if source is dashboard
         # may want to break if no valid setpoint is passed
+
+        print("\n" + f"** Started {self.getName()} with setpoint {self.setpoint} at {self.start_time} s **")
+        SmartDashboard.putString("alert", f"** Started {self.getName()} with setpoint {self.setpoint} at {self.start_time} s **") # logging
 
         self.error = 0 # why are we setting these values again
         self.prev_error = 0
         self.riemann_sum = 0
 
-    def execute(self):
+    def execute(self): 
         """Called repeatedly when this Command is scheduled to run""" 
-        self.error = self.setpoint - self.robot.shooter.getAngle() # le error, i modified this from auto rotate 
+        current_angle = self.robot.shooter.get_angle() 
+
+        self.error = self.setpoint - current_angle # le error, i modified this from auto rotate 
 
         self.riemann_sum += self.error * self.interval_span # integral part
         self.moment_slope = (self.error - self.prev_error) / self.interval_span # derivative part
@@ -62,14 +64,20 @@ class AutonomousAnglePID(Command):
 
         self.prev_error = self.error # previous error is now current error
 
+        '''
         if self.power > 0:
             self.power = min(self.max_power, self.power)
         else:
             self.power = max(-self.max_power, self.power) # i copied this from auto rotate
+        ''' 
 
         self.robot.shooter.set_hood_motor(self.power) # sets the hood motor to that power
 
-        #SmartDashboard.putNumber("error", self.error)
+        SmartDashboard.putNumber('hood_current_angle', current_angle) 
+        SmartDashboard.putNumber('hood_error', self.error) 
+        SmartDashboard.putNumber('hood_I', self.riemann_sum) 
+        SmartDashboard.putNumber('hood_D', self.moment_slope) 
+        SmartDashboard.putNumber('hood_power', self.power) 
 
     def isFinished(self):
         """Make this return true when this Command no longer needs to run execute()"""
