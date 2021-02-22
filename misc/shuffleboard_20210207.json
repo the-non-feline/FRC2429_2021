@@ -185,28 +185,6 @@
               "_source0": "network_table:///SmartDashboard/drive_pose",
               "_title": "drive_pose"
             }
-          }, 
-          "4,6": {
-            "size": [
-              1,
-              1
-            ],
-            "content": {
-              "_type": "Text View",
-              "_source0": "network_table:///SmartDashboard/hood_angle",
-              "_title": "hood_angle"
-            }
-          }, 
-          "4,7": {
-            "size": [
-              1,
-              1
-            ],
-            "content": {
-              "_type": "Text View",
-              "_source0": "network_table:///SmartDashboard/hood_angle",
-              "_title": "hood_error"
-            }
           }
         }
       }
