@@ -86,7 +86,7 @@ class AutonomousAnglePID(Command):
         print(f"** {message} {self.getName()} at {end_time} s after {round(end_time-self.start_time,1)} s **")
         SmartDashboard.putString("alert", f"** Ended {self.getName()} at {end_time} s after {round(end_time - self.start_time, 1)} s **") # logging
 
-        self.robot.shooter.set_hood_motor(0) # cease the hood motor (set power to 0) 
+        #self.robot.shooter.set_hood_motor(0) # cease the hood motor (set power to 0) 
 
     def interrupted(self): 
         """Called when another command which requires one or more of the same subsystems is scheduled to run.""" 
