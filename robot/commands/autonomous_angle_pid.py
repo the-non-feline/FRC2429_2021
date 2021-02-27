@@ -25,7 +25,7 @@ class AutonomousAnglePID(Command):
         self.robot = robot # le robot
 
         self.tolerance = 0.1
-        self.kp = 0.3;  self.kd = 0.1; self.kf = 0.1 # P, D, and I respectively (why is it f) 
+        self.kp = 50;  self.kd = 0; self.ki = 0 # P, D, and I respectively (why is it f) 
 
         self.interval_span = 0.02 # i was informed this thing ran every 0.02 seconds
 
@@ -34,6 +34,9 @@ class AutonomousAnglePID(Command):
         self.riemann_sum = 0 # riemann sum thing for calculating le integral
 
         self.max_power = 0.5 # max power or something
+        self.max_i = 1
+
+        self.current_angle = 0
 
     def initialize(self):
         """Called just before this Command runs the first time."""
@@ -50,42 +53,46 @@ class AutonomousAnglePID(Command):
         self.error = 0 # why are we setting these values again
         self.prev_error = 0
         self.riemann_sum = 0
-
-    def execute(self): 
-        """Called repeatedly when this Command is scheduled to run""" 
-        current_angle = self.robot.shooter.get_angle() 
-
-        self.error = self.setpoint - current_angle # le error, i modified this from auto rotate 
-
-        self.riemann_sum += self.error * self.interval_span # integral part
-        self.moment_slope = (self.error - self.prev_error) / self.interval_span # derivative part
-
-        self.power = self.kp * self.error + self.kf * self.riemann_sum + self.kd * self.moment_slope # plug P, D, I, and their coefficients into the magic formula
-
-        self.prev_error = self.error # previous error is now current error
-
-        '''
-        if self.power > 0:
-            self.power = min(self.max_power, self.power)
-        else:
-            self.power = max(-self.max_power, self.power) # i copied this from auto rotate
-        ''' 
-
-        self.robot.shooter.set_hood_motor(self.power) # sets the hood motor to that power
-
-        SmartDashboard.putNumber('hood_current_angle', current_angle) 
+        self.current_angle = 0
+    
+    def log(self): 
+        SmartDashboard.putNumber('hood_current_angle', self.current_angle) 
         SmartDashboard.putNumber('hood_error', self.error) 
         SmartDashboard.putNumber('hood_I', self.riemann_sum) 
         SmartDashboard.putNumber('hood_D', self.moment_slope) 
         SmartDashboard.putNumber('hood_power', self.power) 
 
+    def execute(self): 
+        """Called repeatedly when this Command is scheduled to run""" 
+        self.current_angle = self.robot.shooter.get_angle() 
+
+        self.error = self.setpoint - self.current_angle # le error, i modified this from auto rotate 
+
+        self.riemann_sum += self.error * self.interval_span # integral part
+
+        self.riemann_sum = max(min(self.riemann_sum, self.max_i), -self.max_i) 
+
+        self.moment_slope = (self.error - self.prev_error) / self.interval_span # derivative part
+
+        self.power = self.kp * self.error + self.ki * self.riemann_sum + self.kd * self.moment_slope # plug P, D, I, and their coefficients into the magic formula
+
+        self.prev_error = self.error # previous error is now current error
+        
+        if self.power > 0:
+            self.power = min(self.max_power, self.power)
+        else:
+            self.power = max(-self.max_power, self.power) # i copied this from auto rotate
+
+        self.robot.shooter.set_hood_motor(self.power) # sets the hood motor to that power
+
+        self.log() 
+
     def isFinished(self):
         """Make this return true when this Command no longer needs to run execute()"""
         # I know I could do this with a math.copysign, but this is more readable
-        if self.setpoint > 0:
-            return self.error <= self.tolerance or self.isTimedOut()
-        else:
-            return self.error >= -self.tolerance or self.isTimedOut() # i assume this works because i copied it
+        #return math.fabs(self.error) <= self.tolerance or self.isTimedOut() 
+        
+        return False
 
     def end(self, message='Ended'):
         """Called once after isFinished returns true"""
@@ -94,10 +101,14 @@ class AutonomousAnglePID(Command):
         print(f"** {message} {self.getName()} at {end_time} s after {round(end_time-self.start_time,1)} s **")
         SmartDashboard.putString("alert", f"** Ended {self.getName()} at {end_time} s after {round(end_time - self.start_time, 1)} s **") # logging
 
-        #self.robot.shooter.set_hood_motor(0) # cease the hood motor (set power to 0) 
+        self.robot.shooter.set_hood_motor(0) # cease the hood motor (set power to 0) 
+
+        self.log() 
 
     def interrupted(self): 
         """Called when another command which requires one or more of the same subsystems is scheduled to run.""" 
         end_time = round(Timer.getFPGATimestamp() - self.robot.enabled_time, 1) # end time
 
         self.end(message=f"** Interrupted {self.getName()} at {end_time} s after {round(end_time-self.start_time,1)} s **") # logging
+
+        self.log() 

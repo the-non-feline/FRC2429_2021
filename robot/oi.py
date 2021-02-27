@@ -16,7 +16,6 @@ from commands.autonomous_drive_pid import AutonomousDrivePID
 from commands.autonomous_velocity_pid import AutonomousVelocityPID
 from commands.shooter_toggle_flywheel import ShooterToggleFlywheel
 from commands.autonomous_angle_pid import AutonomousAnglePID
-from commands.shooter_hood import ShooterHood
 
 import subsystems.drive_constants as drive_constants
 
